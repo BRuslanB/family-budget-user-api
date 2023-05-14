@@ -1,0 +1,17 @@
+# general settings
+server:
+  port: 8003
+
+# spring settings
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/family_budget_user
+    username: postgres
+    password: postgres
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: update
+  liquibase:
+    enabled: false
+    change-log: classpath:/db/changelog/changelog-master.xml

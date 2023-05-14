@@ -1,0 +1,57 @@
+# general settings
+server:
+  port: 8003
+
+# spring settings
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/family_budget_user
+    username: postgres
+    password: postgres
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: update
+  liquibase:
+    enabled: false
+    change-log: classpath:/db/changelog/changelog-master.xml
+
+# springdoc settings
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+  api-docs:
+    path: /api-docs
+    enabled: true
+
+# actuator settings
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+      base-path: "/"
+      path-mapping:
+        health: "healthcheck"
+        info: "info"
+        metrics: "metrics"
+  endpoint:
+    health:
+      show-details: when_authorized
+
+# logging setting
+logging:
+  level:
+    root: ERROR
+    kz.bars.family.budget.user.api: DEBUG
+    org.springframework.boot.autoconfigure.logging: WARN
+  file:
+    name: logs/app.log
+    append: true
+  appenders:
+    - type: file
+      immediateFlush: true
+      layout:
+        type: pattern
+        pattern: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
