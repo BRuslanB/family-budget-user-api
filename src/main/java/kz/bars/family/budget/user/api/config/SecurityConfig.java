@@ -1,6 +1,7 @@
 package kz.bars.family.budget.user.api.config;
 
 import kz.bars.family.budget.user.api.JWT.JWTAuthenticationFilter;
+import kz.bars.family.budget.user.api.JWT.JWTTokenProvider;
 import lombok.AllArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -16,21 +17,25 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
 
-import static kz.bars.family.budget.user.api.JWT.JWTSecurityConstants.SECURED_URLs;
 import static kz.bars.family.budget.user.api.JWT.JWTSecurityConstants.UN_SECURED_URLs;
 
 @Configuration
 @EnableWebSecurity
 @AllArgsConstructor
-public class JWTSecurityConfig {
+public class SecurityConfig {
 
-    final JWTAuthenticationFilter authenticationFilter;
+    final JWTTokenProvider jwtTokenProvider;
     final UserDetailsService userDetailsService;
 
     @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
+    public JWTAuthenticationFilter authenticationFilter() {
+        JWTAuthenticationFilter authenticationFilter = new JWTAuthenticationFilter();
+        authenticationFilter.setTokenService(jwtTokenProvider);
+        authenticationFilter.setUserDetailsService(userDetailsService);
+
+        return authenticationFilter;
     }
 
     @Bean
@@ -45,18 +50,29 @@ public class JWTSecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http.csrf().disable()
+                .cors().configurationSource(request -> {
+                    CorsConfiguration corsConfig = new CorsConfiguration();
+                    corsConfig.addAllowedOrigin("http://localhost:5173"); // Укажите разрешенный источник
+                    corsConfig.addAllowedHeader("*"); // Разрешить все заголовки
+                    corsConfig.addAllowedMethod("*"); // Разрешить все методы
+                    return corsConfig;
+                })
+                .and()
                 .authorizeHttpRequests()
                 .requestMatchers(UN_SECURED_URLs).permitAll()
-                .and()
-                .authorizeHttpRequests().requestMatchers(SECURED_URLs)
-                .hasAnyAuthority("ROLE_USER", "ROLE_ADMIN").anyRequest().authenticated()
+                .anyRequest().authenticated()
                 .and()
                 .sessionManagement()
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 .and()
                 .authenticationProvider(authenticationProvider())
-                .addFilterBefore(authenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(authenticationFilter(), UsernamePasswordAuthenticationFilter.class)
                 .build();
+    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
     }
 
     @Bean

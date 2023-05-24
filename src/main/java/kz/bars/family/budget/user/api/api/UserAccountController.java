@@ -3,6 +3,7 @@ package kz.bars.family.budget.user.api.api;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import kz.bars.family.budget.user.api.dto.UserDto;
 import kz.bars.family.budget.user.api.payload.request.PasswordUpdateRequest;
 import kz.bars.family.budget.user.api.payload.request.ProfileUpdateRequest;
 import kz.bars.family.budget.user.api.service.UserAccountService;
@@ -37,6 +38,15 @@ public class UserAccountController {
 
         log.debug("!Call method User Profile update");
         return userAccountService.updateUserDtoProfile(profileUpdateRequest);
+
+    }
+
+    @GetMapping("/getuser")
+    @Operation(description = "Get Current User")
+    public UserDto getCurrentUser() {
+
+        log.debug("!Call method get Current User");
+        return userAccountService.getCurrentUserDto();
 
     }
 
