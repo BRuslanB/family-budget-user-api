@@ -33,6 +33,9 @@ public class User extends BaseEntity implements UserDetails {
     @Column(nullable = false)
     private String password;
 
+    @Column(name="token_uuid")
+    private String tokenUUID;
+
     @ManyToMany(fetch = FetchType.EAGER)
     private List<Role> roles;
 

@@ -1,5 +1,6 @@
 package kz.bars.family.budget.user.api.service.impl;
 
+import kz.bars.family.budget.user.api.dto.UserDto;
 import kz.bars.family.budget.user.api.exeption.UserAlreadyExistsException;
 import kz.bars.family.budget.user.api.exeption.UserNotFoundException;
 import kz.bars.family.budget.user.api.model.Role;
@@ -13,6 +14,7 @@ import kz.bars.family.budget.user.api.service.UserAccountService;
 import kz.bars.family.budget.user.api.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -54,7 +56,9 @@ public class UserAccountServiceImpl implements UserAccountService {
 
                 log.debug("!User successfully registered, " +
                                 "email={}, first_name={}, last_name={}, birth_day={}, password={}, repeat_password={}",
-                        signupRequest.getEmail(), signupRequest.getFirstName(), signupRequest.getLastName(),
+                        signupRequest.getEmail(),
+                        signupRequest.getFirstName(),
+                        signupRequest.getLastName(),
                         signupRequest.getBirthDay(),
                         signupRequest.getPassword().replaceAll(".", "*"),
                         signupRequest.getRePassword().replaceAll(".", "*"));
@@ -69,7 +73,9 @@ public class UserAccountServiceImpl implements UserAccountService {
 
         log.error("!User not registered, email={}, first_name={}, last_name={}, birth_day={}, " +
                         "password={}, repeat password={}",
-                signupRequest.getEmail(), signupRequest.getFirstName(), signupRequest.getLastName(),
+                signupRequest.getEmail(),
+                signupRequest.getFirstName(),
+                signupRequest.getLastName(),
                 signupRequest.getBirthDay(),
                 signupRequest.getPassword().replaceAll(".", "*"),
                 signupRequest.getRePassword().replaceAll(".", "*"));
@@ -126,7 +132,8 @@ public class UserAccountServiceImpl implements UserAccountService {
                 userRepo.save(currentUser);
 
                 log.debug("!User updated the Profile successfully, first_name={}, last_name={}, birth_day={}",
-                        profileUpdateRequest.getFirstName(), profileUpdateRequest.getLastName(),
+                        profileUpdateRequest.getFirstName(),
+                        profileUpdateRequest.getLastName(),
                         profileUpdateRequest.getBirthDay());
 
                 return profileUpdateRequest;
@@ -138,8 +145,31 @@ public class UserAccountServiceImpl implements UserAccountService {
         }
 
         log.error("!User has not updated the Profile, first_name={}, last_name={}, birth_day={}",
-                profileUpdateRequest.getFirstName(), profileUpdateRequest.getLastName(),
+                profileUpdateRequest.getFirstName(),
+                profileUpdateRequest.getLastName(),
                 profileUpdateRequest.getBirthDay());
+
+        return null;
+    }
+
+    @Override
+    public UserDto getCurrentUserDto() {
+
+        User currentUser = userService.getCurrentUser();
+
+        if (currentUser != null) {
+            UserDto userDto = new UserDto();
+            userDto.setEmail(currentUser.getEmail());
+            userDto.setFirstName(currentUser.getFirstname());
+            userDto.setLastName(currentUser.getLastname());
+            userDto.setBirthDay(currentUser.getBirthDay());
+
+            log.debug("!Current user, name={}",
+                    SecurityContextHolder.getContext().getAuthentication().getName());
+
+            return userDto;
+        }
+        log.error("!Current user not found");
 
         return null;
     }

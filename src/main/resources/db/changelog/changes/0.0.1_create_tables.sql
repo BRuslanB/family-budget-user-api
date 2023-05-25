@@ -12,7 +12,8 @@ CREATE TABLE users (
     firstname TEXT NOT NULL,
     lastname TEXT NOT NULL,
     birth_day DATE NOT NULL,
-    password TEXT NOT NULL
+    password TEXT NOT NULL,
+    token_uuid TEXT
 );
 
 DROP TABLE IF EXISTS users_roles;
