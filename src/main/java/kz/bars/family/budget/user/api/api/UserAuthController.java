@@ -3,6 +3,10 @@ package kz.bars.family.budget.user.api.api;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import kz.bars.family.budget.user.api.exeption.TokenExpiredException;
+import kz.bars.family.budget.user.api.exeption.UserAlreadyExistsException;
+import kz.bars.family.budget.user.api.exeption.UserNotFoundException;
+import kz.bars.family.budget.user.api.exeption.UserPasswordMismatchException;
 import kz.bars.family.budget.user.api.payload.request.LoginRequest;
 import kz.bars.family.budget.user.api.payload.request.RefreshTokenRequest;
 import kz.bars.family.budget.user.api.payload.request.SignupRequest;
@@ -37,30 +41,40 @@ public class UserAuthController {
     public ResponseEntity<Object> authenticateUser(@RequestBody LoginRequest loginRequest) {
 
         log.debug("!Call method User authentication");
-        TokenSuccessResponse tokenSuccessResponse = userAuthService.authenticateUser(loginRequest);
 
-        if (tokenSuccessResponse != null) {
-            return ResponseEntity.ok(tokenSuccessResponse);
-        }
-
-        return new ResponseEntity<>(new MessageResponse("Invalid user credentials"), HttpStatus.BAD_REQUEST);
-    }
-
-    @PostMapping("/refreshtoken")
-    @PreAuthorize("isAuthenticated()")
-    @Operation(description = "Refresh authentication token")
-    public ResponseEntity<Object> refreshToken(@RequestBody RefreshTokenRequest refreshTokenRequest) {
-
-        log.debug("!Call method Refresh authentication token");
-
-        if (refreshTokenRequest.getEmail() != null) {
-            TokenSuccessResponse tokenSuccessResponse = userAuthService.refreshToken(refreshTokenRequest);
+        try {
+            TokenSuccessResponse tokenSuccessResponse = userAuthService.authenticateUser(loginRequest);
 
             if (tokenSuccessResponse != null) {
                 return ResponseEntity.ok(tokenSuccessResponse);
             }
+        } catch (UserNotFoundException e) {
+            return new ResponseEntity<>(new MessageResponse(e.getMessage()), HttpStatus.BAD_REQUEST);
         }
-        return new ResponseEntity<>(new MessageResponse("Invalid refresh token or user not found"), HttpStatus.BAD_REQUEST);
+
+        return new ResponseEntity<>(new MessageResponse("Invalid User Credentials"), HttpStatus.BAD_REQUEST);
+    }
+
+    @PostMapping("/refreshtoken")
+    @PreAuthorize("isAuthenticated()")
+    @Operation(description = "Refresh tokens authentication")
+    public ResponseEntity<Object> refreshToken(@RequestBody RefreshTokenRequest refreshTokenRequest) {
+
+        log.debug("!Call method Refresh tokens authentication");
+
+        try {
+            if (refreshTokenRequest.getEmail() != null) {
+                TokenSuccessResponse tokenSuccessResponse = userAuthService.refreshToken(refreshTokenRequest);
+
+                if (tokenSuccessResponse != null) {
+                    return ResponseEntity.ok(tokenSuccessResponse);
+                }
+            }
+        } catch (TokenExpiredException | UserNotFoundException e) { //
+            return new ResponseEntity<>(new MessageResponse(e.getMessage()), HttpStatus.BAD_REQUEST);
+        }
+
+        return new ResponseEntity<>(new MessageResponse("Invalid Refresh Token or User not found"), HttpStatus.BAD_REQUEST);
     }
 
     @PostMapping("/signup")
@@ -70,8 +84,12 @@ public class UserAuthController {
 
         log.debug("!Call method User registration");
 
-        if (userAccountService.registerUserDto(signupRequest) != null) {
-            return ResponseEntity.ok(new MessageResponse("User registered successfully!"));
+        try {
+            if (userAccountService.registerUserDto(signupRequest) != null) {
+                return ResponseEntity.ok(new MessageResponse("User registered successfully!"));
+            }
+        } catch (UserAlreadyExistsException | UserPasswordMismatchException e) {
+            return new ResponseEntity<>(new MessageResponse(e.getMessage()), HttpStatus.BAD_REQUEST);
         }
 
         return new ResponseEntity<>(new MessageResponse("User not registered"), HttpStatus.BAD_REQUEST);

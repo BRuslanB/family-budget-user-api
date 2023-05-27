@@ -3,6 +3,7 @@ package kz.bars.family.budget.user.api.service.impl;
 import kz.bars.family.budget.user.api.dto.UserDto;
 import kz.bars.family.budget.user.api.exeption.UserAlreadyExistsException;
 import kz.bars.family.budget.user.api.exeption.UserNotFoundException;
+import kz.bars.family.budget.user.api.exeption.UserPasswordMismatchException;
 import kz.bars.family.budget.user.api.model.Role;
 import kz.bars.family.budget.user.api.model.User;
 import kz.bars.family.budget.user.api.payload.request.PasswordUpdateRequest;
@@ -33,52 +34,67 @@ public class UserAccountServiceImpl implements UserAccountService {
 
     public SignupRequest registerUserDto(SignupRequest signupRequest) {
 
-        User checkUser = userRepo.findByEmail(signupRequest.getEmail());
+        try {
+            User checkUser = userRepo.findByEmail(signupRequest.getEmail());
 
-        if (checkUser == null) {
-            if (signupRequest.getPassword().equals(signupRequest.getRePassword())) {
+            if (checkUser == null) {
 
-                List<Role> roles = new ArrayList<>();
-                Role userRole = roleRepo.findByRole("ROLE_USER");
-                roles.add(userRole);
+                if (signupRequest.getPassword().equals(signupRequest.getRePassword())) {
 
-                User user = User
-                        .builder()
-                        .email(signupRequest.getEmail())
-                        .firstname(signupRequest.getFirstName())
-                        .lastname(signupRequest.getLastName())
-                        .birthDay(signupRequest.getBirthDay())
-                        .roles(roles)
-                        .password(passwordEncoder.encode(signupRequest.getPassword()))
-                        .build();
+                    List<Role> roles = new ArrayList<>();
+                    Role userRole = roleRepo.findByRole("ROLE_USER");
+                    roles.add(userRole);
 
-                userRepo.save(user);
+                    User user = User
+                            .builder()
+                            .email(signupRequest.getEmail())
+                            .firstname(signupRequest.getFirstName())
+                            .lastname(signupRequest.getLastName())
+                            .birthDay(signupRequest.getBirthDay())
+                            .roles(roles)
+                            .password(passwordEncoder.encode(signupRequest.getPassword()))
+                            .build();
 
-                log.debug("!User successfully registered, " +
-                                "email={}, first_name={}, last_name={}, birth_day={}, password={}, repeat_password={}",
-                        signupRequest.getEmail(),
-                        signupRequest.getFirstName(),
-                        signupRequest.getLastName(),
-                        signupRequest.getBirthDay(),
-                        signupRequest.getPassword().replaceAll(".", "*"),
-                        signupRequest.getRePassword().replaceAll(".", "*"));
+                    userRepo.save(user);
 
-                return signupRequest;
+                    log.debug("!User successfully registered, " +
+                                    "email={}, first_name={}, last_name={}, birth_day={}, password={}, repeat_password={}",
+                            signupRequest.getEmail(),
+                            signupRequest.getFirstName(),
+                            signupRequest.getLastName(),
+                            signupRequest.getBirthDay(),
+                            signupRequest.getPassword().replaceAll(".", "*"),
+                            signupRequest.getRePassword().replaceAll(".", "*"));
+
+                    return signupRequest;
+
+                } else {
+
+                    log.debug("!User password mismatch, email={}, password={}, repeat password={}" +
+                                    signupRequest.getEmail(),
+                            signupRequest.getPassword().replaceAll(".", "*"),
+                            signupRequest.getRePassword().replaceAll(".", "*"));
+
+                    throw new UserPasswordMismatchException("Password mismatch");
+                }
+
+            } else {
+
+                log.error("!User already exists, email={}" + signupRequest.getEmail());
+                throw new UserAlreadyExistsException("User already exists");
             }
 
-        } else {
+        } catch (Exception ex) {
 
-            throw new UserAlreadyExistsException("User already exists");
+            log.error("!User not registered, " +
+                            "email={}, first_name={}, last_name={}, birth_day={}, password={}, repeat_password={}",
+                    signupRequest.getEmail(),
+                    signupRequest.getFirstName(),
+                    signupRequest.getLastName(),
+                    signupRequest.getBirthDay(),
+                    signupRequest.getPassword().replaceAll(".", "*"),
+                    signupRequest.getRePassword().replaceAll(".", "*"));
         }
-
-        log.error("!User not registered, email={}, first_name={}, last_name={}, birth_day={}, " +
-                        "password={}, repeat password={}",
-                signupRequest.getEmail(),
-                signupRequest.getFirstName(),
-                signupRequest.getLastName(),
-                signupRequest.getBirthDay(),
-                signupRequest.getPassword().replaceAll(".", "*"),
-                signupRequest.getRePassword().replaceAll(".", "*"));
 
         return null;
     }
@@ -86,33 +102,37 @@ public class UserAccountServiceImpl implements UserAccountService {
     @Override
     public PasswordUpdateRequest updateUserDtoPassword(PasswordUpdateRequest passwordUpdateRequest) {
 
-        User currentUser = userService.getCurrentUser();
+        try {
+            User currentUser = userService.getCurrentUser();
 
-        if (currentUser != null) {
-            if (passwordUpdateRequest.getNewPassword().equals(passwordUpdateRequest.getRePassword()) &&
-                    passwordEncoder.matches(passwordUpdateRequest.getPassword(), currentUser.getPassword())) {
-                currentUser.setPassword(passwordEncoder.encode(passwordUpdateRequest.getNewPassword()));
+            if (currentUser != null) {
+                if (passwordUpdateRequest.getNewPassword().equals(passwordUpdateRequest.getRePassword()) &&
+                        passwordEncoder.matches(passwordUpdateRequest.getPassword(), currentUser.getPassword())) {
+                    currentUser.setPassword(passwordEncoder.encode(passwordUpdateRequest.getNewPassword()));
 
-                userRepo.save(currentUser);
+                    userRepo.save(currentUser);
 
-                log.debug("!User updated the Password successfully, old_password={}, new_password={}, " +
-                                "renew_password={}",
-                        passwordUpdateRequest.getPassword().replaceAll(".", "*"),
-                        passwordUpdateRequest.getNewPassword().replaceAll(".", "*"),
-                        passwordUpdateRequest.getRePassword().replaceAll(".", "*"));
+                    log.debug("!User updated the Password successfully, old_password={}, new_password={}, " +
+                                    "renew_password={}",
+                            passwordUpdateRequest.getPassword().replaceAll(".", "*"),
+                            passwordUpdateRequest.getNewPassword().replaceAll(".", "*"),
+                            passwordUpdateRequest.getRePassword().replaceAll(".", "*"));
 
-                return passwordUpdateRequest;
+                    return passwordUpdateRequest;
+                }
+
+            } else {
+
+                throw new UserNotFoundException("User not found");
             }
 
-        } else {
+        } catch (Exception ex) {
 
-            throw new UserNotFoundException("User not found");
+            log.error("!User has not updated the Password, old_password={}, new_password={}, renew_password={}",
+                    passwordUpdateRequest.getPassword().replaceAll(".", "*"),
+                    passwordUpdateRequest.getNewPassword().replaceAll(".", "*"),
+                    passwordUpdateRequest.getRePassword().replaceAll(".", "*"));
         }
-
-        log.error("!User has not updated the Password, old_password={}, new_password={}, renew_password={}",
-                passwordUpdateRequest.getPassword().replaceAll(".", "*"),
-                passwordUpdateRequest.getNewPassword().replaceAll(".", "*"),
-                passwordUpdateRequest.getRePassword().replaceAll(".", "*"));
 
         return null;
     }
@@ -120,34 +140,38 @@ public class UserAccountServiceImpl implements UserAccountService {
     @Override
     public ProfileUpdateRequest updateUserDtoProfile(ProfileUpdateRequest profileUpdateRequest) {
 
-        User currentUser = userService.getCurrentUser();
+        try {
+            User currentUser = userService.getCurrentUser();
 
-        if (currentUser != null) {
+            if (currentUser != null) {
 
-            if (true) {
-                currentUser.setFirstname(profileUpdateRequest.getFirstName());
-                currentUser.setLastname(profileUpdateRequest.getLastName());
-                currentUser.setBirthDay(profileUpdateRequest.getBirthDay());
+                if (true) {
+                    currentUser.setFirstname(profileUpdateRequest.getFirstName());
+                    currentUser.setLastname(profileUpdateRequest.getLastName());
+                    currentUser.setBirthDay(profileUpdateRequest.getBirthDay());
 
-                userRepo.save(currentUser);
+                    userRepo.save(currentUser);
 
-                log.debug("!User updated the Profile successfully, first_name={}, last_name={}, birth_day={}",
-                        profileUpdateRequest.getFirstName(),
-                        profileUpdateRequest.getLastName(),
-                        profileUpdateRequest.getBirthDay());
+                    log.debug("!User updated the Profile successfully, first_name={}, last_name={}, birth_day={}",
+                            profileUpdateRequest.getFirstName(),
+                            profileUpdateRequest.getLastName(),
+                            profileUpdateRequest.getBirthDay());
 
-                return profileUpdateRequest;
+                    return profileUpdateRequest;
+                }
+
+            } else {
+
+                throw new UserNotFoundException("User not found");
             }
 
-        } else {
+        } catch (Exception ex) {
 
-            throw new UserNotFoundException("User not found");
+            log.error("!User has not updated the Profile, first_name={}, last_name={}, birth_day={}",
+                    profileUpdateRequest.getFirstName(),
+                    profileUpdateRequest.getLastName(),
+                    profileUpdateRequest.getBirthDay());
         }
-
-        log.error("!User has not updated the Profile, first_name={}, last_name={}, birth_day={}",
-                profileUpdateRequest.getFirstName(),
-                profileUpdateRequest.getLastName(),
-                profileUpdateRequest.getBirthDay());
 
         return null;
     }
@@ -155,21 +179,30 @@ public class UserAccountServiceImpl implements UserAccountService {
     @Override
     public UserDto getCurrentUserDto() {
 
-        User currentUser = userService.getCurrentUser();
+        try {
+            User currentUser = userService.getCurrentUser();
 
-        if (currentUser != null) {
-            UserDto userDto = new UserDto();
-            userDto.setEmail(currentUser.getEmail());
-            userDto.setFirstName(currentUser.getFirstname());
-            userDto.setLastName(currentUser.getLastname());
-            userDto.setBirthDay(currentUser.getBirthDay());
+            if (currentUser != null) {
+                UserDto userDto = new UserDto();
+                userDto.setEmail(currentUser.getEmail());
+                userDto.setFirstName(currentUser.getFirstname());
+                userDto.setLastName(currentUser.getLastname());
+                userDto.setBirthDay(currentUser.getBirthDay());
 
-            log.debug("!Current user, name={}",
-                    SecurityContextHolder.getContext().getAuthentication().getName());
+                log.debug("!Current user, name={}",
+                        SecurityContextHolder.getContext().getAuthentication().getName());
 
-            return userDto;
+                return userDto;
+
+            } else {
+
+                throw new UserNotFoundException("User not found");
+            }
+
+        } catch (Exception ex) {
+
+            log.error("!Current user not found");
         }
-        log.error("!Current user not found");
 
         return null;
     }

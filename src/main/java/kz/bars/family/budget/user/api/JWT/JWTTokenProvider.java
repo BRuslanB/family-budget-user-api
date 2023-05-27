@@ -1,12 +1,8 @@
 package kz.bars.family.budget.user.api.JWT;
 
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.ExpiredJwtException;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import kz.bars.family.budget.user.api.exeption.TokenExpiredException;
-import lombok.extern.log4j.Log4j2;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
@@ -15,12 +11,12 @@ import java.util.*;
 import java.util.function.Function;
 
 @Component
-@Log4j2
 public class JWTTokenProvider {
 
-    public String generateAccessToken(String userName, List<String> roles) {
+    public String generateAccessToken(String userName, String fullName, List<String> roles) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("authorities", roles);
+        claims.put("fullname", fullName);
         return accessTokenCreator(claims, userName);
     }
 
@@ -34,9 +30,14 @@ public class JWTTokenProvider {
     }
 
     public boolean validateAccessToken(String accessToken, UserDetails userDetails) {
-        final String userName = extractUsernameFromToken(accessToken, JWTSecurityConstants.AUTH_SECRET_KEY);
-        return (userName.equals(userDetails.getUsername()) &&
-                !isTokenExpired(accessToken, JWTSecurityConstants.AUTH_SECRET_KEY));
+        try {
+            final String userName = extractUsernameFromToken(accessToken, JWTSecurityConstants.AUTH_SECRET_KEY);
+            return (userName.equals(userDetails.getUsername()) &&
+                    !isTokenExpired(accessToken, JWTSecurityConstants.AUTH_SECRET_KEY));
+        } catch (TokenExpiredException ex) {
+            // Обработка исключения при просроченном или ошибочном токене
+            return false;
+        }
     }
 
     public String generateRefreshToken(String userName) {
@@ -55,13 +56,23 @@ public class JWTTokenProvider {
     }
 
     public boolean validateRefreshToken(String refreshToken, UserDetails userDetails) {
-        final String userName = extractUsernameFromToken(refreshToken, JWTSecurityConstants.REFRESH_SECRET_KEY);
-        return (userName.equals(userDetails.getUsername()) &&
-                !isTokenExpired(refreshToken, JWTSecurityConstants.REFRESH_SECRET_KEY));
+        try {
+            final String userName = extractUsernameFromToken(refreshToken, JWTSecurityConstants.REFRESH_SECRET_KEY);
+            return (userName.equals(userDetails.getUsername()) &&
+                    !isTokenExpired(refreshToken, JWTSecurityConstants.REFRESH_SECRET_KEY));
+        } catch (TokenExpiredException ex) {
+            // Обработка исключения при просроченном или ошибочном токене
+            return false;
+        }
     }
 
     public String extractUsernameFromToken(String theToken, String theKey) {
-        return extractClaim(theToken, theKey, Claims::getSubject);
+        try {
+            return extractClaim(theToken, theKey, Claims::getSubject);
+        } catch (TokenExpiredException ex) {
+            // Обработка исключения при просроченном или ошибочном токене
+            throw new TokenExpiredException("Token has expired or invalid token");
+        }
     }
 
     public String extractUUIDFromToken(String theToken, String theKey) {
@@ -73,8 +84,13 @@ public class JWTTokenProvider {
     }
 
     private <T> T extractClaim(String theToken, String theKey, Function<Claims, T> claimsResolver) {
-        final Claims claims = extractAllClaims(theToken, theKey);
-        return claimsResolver.apply(claims);
+        try {
+            final Claims claims = extractAllClaims(theToken, theKey);
+            return claimsResolver.apply(claims);
+        } catch (TokenExpiredException ex) {
+            // Обработка исключения при просроченном или ошибочном токене
+            throw new TokenExpiredException("Token has expired or invalid token");
+        }
     }
 
     private Claims extractAllClaims(String theToken, String theKey) {
@@ -84,10 +100,9 @@ public class JWTTokenProvider {
                     .build()
                     .parseClaimsJws(theToken)
                     .getBody();
-        } catch (ExpiredJwtException ex) {
-            // Обработка исключения при просроченном токене
-            log.error("!Token has expired, token={}", theToken);
-            throw new TokenExpiredException("Token has expired");
+        } catch (ExpiredJwtException | MalformedJwtException ex) {
+            // Обработка исключения при просроченном или ошибочном токене
+            throw new TokenExpiredException("Token has expired or invalid token");
         }
     }
 
