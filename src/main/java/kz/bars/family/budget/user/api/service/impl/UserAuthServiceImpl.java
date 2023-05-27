@@ -2,6 +2,7 @@ package kz.bars.family.budget.user.api.service.impl;
 
 import kz.bars.family.budget.user.api.JWT.JWTSecurityConstants;
 import kz.bars.family.budget.user.api.JWT.JWTTokenProvider;
+import kz.bars.family.budget.user.api.exeption.UserNotFoundException;
 import kz.bars.family.budget.user.api.model.Role;
 import kz.bars.family.budget.user.api.model.User;
 import kz.bars.family.budget.user.api.payload.request.LoginRequest;
@@ -44,6 +45,7 @@ public class UserAuthServiceImpl implements UserAuthService {
 
                 if (user != null) {
                     String accessToken = jwtTokenProvider.generateAccessToken(user.getEmail(),
+                            user.getLastname() + " " + user.getFirstname(),
                             user.getRoles().stream().map(Role::getRole).collect(Collectors.toList()));
                     String refreshToken = jwtTokenProvider.generateRefreshToken(user.getEmail());
 
@@ -53,6 +55,10 @@ public class UserAuthServiceImpl implements UserAuthService {
 
                     updateRefreshTokenInDatabase(user, tokenUUID);
                     return new TokenSuccessResponse(accessToken, refreshToken);
+
+                } else {
+
+                    throw new UserNotFoundException("User not found");
                 }
             }
 
@@ -73,6 +79,7 @@ public class UserAuthServiceImpl implements UserAuthService {
 
             if (user != null) {
                 String newAccessToken = jwtTokenProvider.generateAccessToken(user.getEmail(),
+                        user.getLastname() + " " + user.getFirstname(),
                         user.getRoles().stream().map(Role::getRole).collect(Collectors.toList()));
                 String newRefreshToken = jwtTokenProvider.generateRefreshToken(user.getEmail());
 
@@ -80,11 +87,17 @@ public class UserAuthServiceImpl implements UserAuthService {
                 if (updateRefreshTokenInDatabase(user, refreshTokenRequest.getTokenUUID(), newRefreshToken)) {
                     return new TokenSuccessResponse(newAccessToken, newRefreshToken);
                 }
+
+            } else {
+
+                throw new UserNotFoundException("User not found");
             }
 
         } catch (Exception ex) {
+
             log.error("!Invalid refresh token or user not found");
         }
+
         return null;
     }
 
@@ -99,35 +112,40 @@ public class UserAuthServiceImpl implements UserAuthService {
 
     private boolean updateRefreshTokenInDatabase(User user, String tokenUUID, String newRefreshToken) {
 
-        String currentTokenUUID = user.getTokenUUID();
-        String newTokenUUID = jwtTokenProvider.extractUUIDFromToken(newRefreshToken,
-                JWTSecurityConstants.REFRESH_SECRET_KEY);
+        try {
+            String currentTokenUUID = user.getTokenUUID();
+            String newTokenUUID = jwtTokenProvider.extractUUIDFromToken(newRefreshToken,
+                    JWTSecurityConstants.REFRESH_SECRET_KEY);
 
-        if (currentTokenUUID == null) {
-            // Update the new value of the token_UUID in the database
-            user.setTokenUUID(newTokenUUID);
-            userRepo.save(user);
-
-            log.debug("!User token_uuid updated successfully, token_uuid={}", user.getTokenUUID());
-            return true;
-
-        } else if (currentTokenUUID.equals(tokenUUID)) {
-
-            if (jwtTokenProvider.validateRefreshToken(newRefreshToken, user)) {
-                // Update the new value of the token_uuid in the database
+            if (currentTokenUUID == null) {
+                // Update the new value of the token_UUID in the database
                 user.setTokenUUID(newTokenUUID);
                 userRepo.save(user);
 
                 log.debug("!User token_uuid updated successfully, token_uuid={}", user.getTokenUUID());
                 return true;
 
+            } else if (currentTokenUUID.equals(tokenUUID)) {
+
+                if (jwtTokenProvider.validateRefreshToken(newRefreshToken, user)) {
+                    // Update the new value of the token_uuid in the database
+                    user.setTokenUUID(newTokenUUID);
+                    userRepo.save(user);
+
+                    log.debug("!User token_uuid updated successfully, token_uuid={}", user.getTokenUUID());
+                    return true;
+
+                } else {
+                    log.error("!User refresh token invalid, newRefreshToken={}", newRefreshToken);
+                }
+
             } else {
-                log.error("!User refresh token invalid, newRefreshToken={}", newRefreshToken);
+                log.error("!User refresh token UUID is not equals, currentTokenUUID={}, newTokenUUID={}",
+                        currentTokenUUID, newTokenUUID);
             }
 
-        } else {
-            log.error("!User refresh token UUID is not equals, currentTokenUUID={}, newTokenUUID={}",
-                    currentTokenUUID, newTokenUUID);
+        } catch (Exception ex) {
+            log.error("!User token_uuid is not updated");
         }
 
         return false;

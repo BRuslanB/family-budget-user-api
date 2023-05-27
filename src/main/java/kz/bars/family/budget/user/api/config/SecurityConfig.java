@@ -19,6 +19,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 
+import static kz.bars.family.budget.user.api.JWT.JWTSecurityConstants.SECURED_URLs;
 import static kz.bars.family.budget.user.api.JWT.JWTSecurityConstants.UN_SECURED_URLs;
 
 @Configuration
@@ -52,7 +53,7 @@ public class SecurityConfig {
         return http.csrf().disable()
                 .cors().configurationSource(request -> {
                     CorsConfiguration corsConfig = new CorsConfiguration();
-                    corsConfig.addAllowedOrigin("http://localhost:5173"); // Укажите разрешенный источник
+                    corsConfig.addAllowedOrigin("http://localhost:5173"); // Разрешенный источник
                     corsConfig.addAllowedHeader("*"); // Разрешить все заголовки
                     corsConfig.addAllowedMethod("*"); // Разрешить все методы
                     return corsConfig;
@@ -60,7 +61,8 @@ public class SecurityConfig {
                 .and()
                 .authorizeHttpRequests()
                 .requestMatchers(UN_SECURED_URLs).permitAll()
-                .anyRequest().authenticated()
+//                .anyRequest().authenticated()
+                .requestMatchers(SECURED_URLs).authenticated()
                 .and()
                 .sessionManagement()
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)

@@ -4,11 +4,15 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import kz.bars.family.budget.user.api.dto.UserDto;
+import kz.bars.family.budget.user.api.exeption.UserNotFoundException;
 import kz.bars.family.budget.user.api.payload.request.PasswordUpdateRequest;
 import kz.bars.family.budget.user.api.payload.request.ProfileUpdateRequest;
+import kz.bars.family.budget.user.api.payload.response.MessageResponse;
 import kz.bars.family.budget.user.api.service.UserAccountService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -25,29 +29,59 @@ public class UserAccountController {
 
     @PutMapping("/password")
     @Operation(description = "User Password update")
-    public PasswordUpdateRequest updateUserPassword(@RequestBody PasswordUpdateRequest passwordUpdateRequest) {
+    public ResponseEntity<Object> updateUserPassword(@RequestBody PasswordUpdateRequest passwordUpdateRequest) {
 
         log.debug("!Call method User Password update");
-        return userAccountService.updateUserDtoPassword(passwordUpdateRequest);
 
+        try {
+            PasswordUpdateRequest passwordUpdate = userAccountService.updateUserDtoPassword(passwordUpdateRequest);
+
+            if (passwordUpdate != null) {
+                return ResponseEntity.ok(passwordUpdate);
+            }
+        } catch (UserNotFoundException e) {
+            return new ResponseEntity<>(new MessageResponse(e.getMessage()), HttpStatus.BAD_REQUEST);
+        }
+
+        return new ResponseEntity<>(new MessageResponse("User Password not updated"), HttpStatus.BAD_REQUEST);
     }
 
     @PutMapping("/profile")
     @Operation(description = "User Profile update")
-    public ProfileUpdateRequest updateProfile(@RequestBody ProfileUpdateRequest profileUpdateRequest) {
+    public ResponseEntity<Object> updateProfile(@RequestBody ProfileUpdateRequest profileUpdateRequest) {
 
         log.debug("!Call method User Profile update");
-        return userAccountService.updateUserDtoProfile(profileUpdateRequest);
 
+        try {
+            ProfileUpdateRequest profileUpdate = userAccountService.updateUserDtoProfile(profileUpdateRequest);
+
+            if (profileUpdate != null) {
+                return ResponseEntity.ok(profileUpdate);
+            }
+        } catch (UserNotFoundException e) {
+            return new ResponseEntity<>(new MessageResponse(e.getMessage()), HttpStatus.BAD_REQUEST);
+        }
+
+        return new ResponseEntity<>(new MessageResponse("User Profile not found"), HttpStatus.BAD_REQUEST);
     }
 
     @GetMapping("/getuser")
     @Operation(description = "Get Current User")
-    public UserDto getCurrentUser() {
+    public ResponseEntity<Object> getCurrentUser() {
 
         log.debug("!Call method get Current User");
-        return userAccountService.getCurrentUserDto();
 
+        try {
+            UserDto userDto = userAccountService.getCurrentUserDto();
+
+            if (userDto != null) {
+                return ResponseEntity.ok(userDto);
+            }
+        } catch (UserNotFoundException e) {
+            return new ResponseEntity<>(new MessageResponse(e.getMessage()), HttpStatus.BAD_REQUEST);
+        }
+
+        return new ResponseEntity<>(new MessageResponse("User not found"), HttpStatus.BAD_REQUEST);
     }
 
 }
