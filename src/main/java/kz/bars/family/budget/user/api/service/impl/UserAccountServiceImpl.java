@@ -84,6 +84,10 @@ public class UserAccountServiceImpl implements UserAccountService {
                 throw new UserAlreadyExistsException("User already exists");
             }
 
+        } catch (UserAlreadyExistsException | UserPasswordMismatchException ex) {
+
+            throw ex; // Пропускаем обработку и выбрасываем исключение дальше
+
         } catch (Exception ex) {
 
             log.error("!User not registered, " +
@@ -119,12 +123,25 @@ public class UserAccountServiceImpl implements UserAccountService {
                             passwordUpdateRequest.getRePassword().replaceAll(".", "*"));
 
                     return passwordUpdateRequest;
+
+                } else {
+
+                    log.error("!User Password mismatch, old_password={}, new_password={}, renew_password={}",
+                            passwordUpdateRequest.getPassword().replaceAll(".", "*"),
+                            passwordUpdateRequest.getNewPassword().replaceAll(".", "*"),
+                            passwordUpdateRequest.getRePassword().replaceAll(".", "*"));
+
+                    throw new UserPasswordMismatchException("Password mismatch");
                 }
 
             } else {
 
                 throw new UserNotFoundException("User not found");
             }
+
+        } catch (UserNotFoundException | UserPasswordMismatchException ex) {
+
+            throw ex; // Пропускаем обработку и выбрасываем исключение дальше
 
         } catch (Exception ex) {
 
@@ -165,6 +182,10 @@ public class UserAccountServiceImpl implements UserAccountService {
                 throw new UserNotFoundException("User not found");
             }
 
+        } catch (UserNotFoundException ex) {
+
+            throw ex; // Пропускаем обработку и выбрасываем исключение дальше
+
         } catch (Exception ex) {
 
             log.error("!User has not updated the Profile, first_name={}, last_name={}, birth_day={}",
@@ -198,6 +219,10 @@ public class UserAccountServiceImpl implements UserAccountService {
 
                 throw new UserNotFoundException("User not found");
             }
+
+        } catch (UserNotFoundException ex) {
+
+            throw ex; // Пропускаем обработку и выбрасываем исключение дальше
 
         } catch (Exception ex) {
 

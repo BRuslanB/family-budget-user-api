@@ -70,7 +70,7 @@ public class UserAuthController {
                     return ResponseEntity.ok(tokenSuccessResponse);
                 }
             }
-        } catch (TokenExpiredException | UserNotFoundException e) { //
+        } catch (UserNotFoundException e) { //
             return new ResponseEntity<>(new MessageResponse(e.getMessage()), HttpStatus.BAD_REQUEST);
         }
 

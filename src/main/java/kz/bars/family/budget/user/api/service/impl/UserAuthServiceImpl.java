@@ -62,6 +62,10 @@ public class UserAuthServiceImpl implements UserAuthService {
                 }
             }
 
+        } catch (UserNotFoundException ex) {
+
+            throw ex; // Пропускаем обработку и выбрасываем исключение дальше
+
         } catch (Exception ex) {
 
             log.error("!Invalid user credentials, email={}, password={}",
@@ -92,6 +96,10 @@ public class UserAuthServiceImpl implements UserAuthService {
 
                 throw new UserNotFoundException("User not found");
             }
+
+        } catch (UserNotFoundException ex) {
+
+            throw ex; // Пропускаем обработку и выбрасываем исключение дальше
 
         } catch (Exception ex) {
 
@@ -136,15 +144,18 @@ public class UserAuthServiceImpl implements UserAuthService {
                     return true;
 
                 } else {
+
                     log.error("!User refresh token invalid, newRefreshToken={}", newRefreshToken);
                 }
 
             } else {
+
                 log.error("!User refresh token UUID is not equals, currentTokenUUID={}, newTokenUUID={}",
                         currentTokenUUID, newTokenUUID);
             }
 
         } catch (Exception ex) {
+
             log.error("!User token_uuid is not updated");
         }
 
@@ -160,6 +171,7 @@ public class UserAuthServiceImpl implements UserAuthService {
             log.debug("!User token_uuid updated successfully, token_uuid={}", user.getTokenUUID());
 
         } catch (Exception ex) {
+
             log.error("!User token_uuid is not updated");
         }
     }

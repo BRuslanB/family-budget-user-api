@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import kz.bars.family.budget.user.api.dto.UserDto;
 import kz.bars.family.budget.user.api.exeption.UserNotFoundException;
+import kz.bars.family.budget.user.api.exeption.UserPasswordMismatchException;
 import kz.bars.family.budget.user.api.payload.request.PasswordUpdateRequest;
 import kz.bars.family.budget.user.api.payload.request.ProfileUpdateRequest;
 import kz.bars.family.budget.user.api.payload.response.MessageResponse;
@@ -37,9 +38,9 @@ public class UserAccountController {
             PasswordUpdateRequest passwordUpdate = userAccountService.updateUserDtoPassword(passwordUpdateRequest);
 
             if (passwordUpdate != null) {
-                return ResponseEntity.ok(passwordUpdate);
+                return ResponseEntity.ok(new MessageResponse("User updated the Password successfully!"));
             }
-        } catch (UserNotFoundException e) {
+        } catch (UserNotFoundException | UserPasswordMismatchException e) {
             return new ResponseEntity<>(new MessageResponse(e.getMessage()), HttpStatus.BAD_REQUEST);
         }
 
@@ -56,13 +57,13 @@ public class UserAccountController {
             ProfileUpdateRequest profileUpdate = userAccountService.updateUserDtoProfile(profileUpdateRequest);
 
             if (profileUpdate != null) {
-                return ResponseEntity.ok(profileUpdate);
+                return ResponseEntity.ok(new MessageResponse("User updated the Profile successfully!"));
             }
         } catch (UserNotFoundException e) {
             return new ResponseEntity<>(new MessageResponse(e.getMessage()), HttpStatus.BAD_REQUEST);
         }
 
-        return new ResponseEntity<>(new MessageResponse("User Profile not found"), HttpStatus.BAD_REQUEST);
+        return new ResponseEntity<>(new MessageResponse("User Profile not updated"), HttpStatus.BAD_REQUEST);
     }
 
     @GetMapping("/getuser")
