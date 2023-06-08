@@ -15,7 +15,6 @@ import kz.bars.family.budget.user.api.service.UserAccountService;
 import kz.bars.family.budget.user.api.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -86,7 +85,7 @@ public class UserAccountServiceImpl implements UserAccountService {
 
         } catch (UserAlreadyExistsException | UserPasswordMismatchException ex) {
 
-            throw ex; // Пропускаем обработку и выбрасываем исключение дальше
+            throw ex; // Skip processing and throw an exception further
 
         } catch (Exception ex) {
 
@@ -141,7 +140,7 @@ public class UserAccountServiceImpl implements UserAccountService {
 
         } catch (UserNotFoundException | UserPasswordMismatchException ex) {
 
-            throw ex; // Пропускаем обработку и выбрасываем исключение дальше
+            throw ex; // Skip processing and throw an exception further
 
         } catch (Exception ex) {
 
@@ -184,7 +183,7 @@ public class UserAccountServiceImpl implements UserAccountService {
 
         } catch (UserNotFoundException ex) {
 
-            throw ex; // Пропускаем обработку и выбрасываем исключение дальше
+            throw ex; // Skip processing and throw an exception further
 
         } catch (Exception ex) {
 
@@ -210,8 +209,11 @@ public class UserAccountServiceImpl implements UserAccountService {
                 userDto.setLastName(currentUser.getLastname());
                 userDto.setBirthDay(currentUser.getBirthDay());
 
-                log.debug("!Current user, name={}",
-                        SecurityContextHolder.getContext().getAuthentication().getName());
+                log.debug("!Current user, name={}, first_name={}, last_name={}, birth_day={}",
+                        userDto.getEmail(),
+                        userDto.getFirstName(),
+                        userDto.getLastName(),
+                        userDto.getBirthDay());
 
                 return userDto;
 
@@ -222,7 +224,7 @@ public class UserAccountServiceImpl implements UserAccountService {
 
         } catch (UserNotFoundException ex) {
 
-            throw ex; // Пропускаем обработку и выбрасываем исключение дальше
+            throw ex; // Skip processing and throw an exception further
 
         } catch (Exception ex) {
 

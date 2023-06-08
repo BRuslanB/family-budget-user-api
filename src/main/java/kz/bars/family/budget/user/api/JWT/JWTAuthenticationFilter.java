@@ -34,16 +34,16 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
 
-        // Проверка наличия access token или refresh token в заголовке запроса
+        // Checking for access token or refresh token in request header
         String authHeader = request.getHeader(JWTSecurityConstants.AUTH_HEADER_STRING);
         String refreshHeader = request.getHeader(JWTSecurityConstants.REFRESH_HEADER_STRING);
 
-        if (authHeader == null && refreshHeader == null) { // Если оба заголовка равны null, пропускаем фильтр
+        if (authHeader == null && refreshHeader == null) { // If both headers are null, skip the filter
 
             filterChain.doFilter(request, response);
             return;
 
-        } else if (authHeader != null) { // При наличии access token в заголовке запроса
+        } else if (authHeader != null) { // If there is an access token in the request header
 
             String accessToken;
             String userName = null;
@@ -63,7 +63,7 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
                     try {
                         UserDetails userDetails = userDetailsService.loadUserByUsername(userName);
 
-                        // Валидация access token
+                        // Validation access token
                         if (jwtTokenProvider.validateAccessToken(accessToken, userDetails)) {
                             var authToken = new UsernamePasswordAuthenticationToken(userDetails, null,
                                     userDetails.getAuthorities());
@@ -76,11 +76,11 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
 
             } else {
 
-                filterChain.doFilter(request, response); //пропускаем фильтр
+                filterChain.doFilter(request, response); // skip filter
                 return;
             }
 
-        } else { // При наличии refresh token в заголовке запроса
+        } else { // If there is a refresh token in the request header
 
             String refreshToken;
             String userName = null;
@@ -94,7 +94,7 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
                 } catch (TokenExpiredException ex) {
                     log.error("!Refresh Token has expired or invalid, token={}", refreshToken);
 
-                    filterChain.doFilter(request, response); //пропускаем фильтр
+                    filterChain.doFilter(request, response); // skip filter
                     return;
                 }
 
@@ -103,11 +103,11 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
                     try {
                         UserDetails userDetails = userDetailsService.loadUserByUsername(userName);
 
-                        // Валидация refresh token
+                        // Validation refresh token
                         if (jwtTokenProvider.validateRefreshToken(refreshToken, userDetails)) {
-                            // Пропускаем запросы на /api/auth/refreshtoken
+                            // Missing requests for /api/auth/refreshtoken
                             if (request.getRequestURI().equals("/api/auth/refreshtoken")) {
-                                // Передаем обработку на контроллер refreshToken, пропускаем фильтр
+                                // We transfer processing to the refreshToken controller, skip the filter
                                 filterChain.doFilter(request, response);
                                 return;
                             }
@@ -118,12 +118,12 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
 
             } else {
 
-                filterChain.doFilter(request, response); //пропускаем фильтр
+                filterChain.doFilter(request, response);
                 return;
             }
         }
 
-        filterChain.doFilter(request, response); //пропускаем фильтр
+        filterChain.doFilter(request, response);
     }
 
 }

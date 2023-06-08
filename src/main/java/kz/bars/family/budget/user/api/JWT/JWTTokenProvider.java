@@ -35,14 +35,15 @@ public class JWTTokenProvider {
             return (userName.equals(userDetails.getUsername()) &&
                     !isTokenExpired(accessToken, JWTSecurityConstants.AUTH_SECRET_KEY));
         } catch (TokenExpiredException ex) {
-            // Обработка исключения при просроченном или ошибочном токене
+            // Handling an exception for an expired or erroneous token
             return false;
         }
     }
 
     public String generateRefreshToken(String userName) {
         Map<String, Object> claims = new HashMap<>();
-        claims.put("UUID", UUID.randomUUID().toString()); // генерация UUID для записи в БД
+        // Generation of UUID for writing to the database
+        claims.put("UUID", UUID.randomUUID().toString());
         return refreshTokenCreator(claims, userName);
     }
 
@@ -61,7 +62,7 @@ public class JWTTokenProvider {
             return (userName.equals(userDetails.getUsername()) &&
                     !isTokenExpired(refreshToken, JWTSecurityConstants.REFRESH_SECRET_KEY));
         } catch (TokenExpiredException ex) {
-            // Обработка исключения при просроченном или ошибочном токене
+            // Handling an exception for an expired or erroneous token
             return false;
         }
     }
@@ -70,7 +71,7 @@ public class JWTTokenProvider {
         try {
             return extractClaim(theToken, theKey, Claims::getSubject);
         } catch (TokenExpiredException ex) {
-            // Обработка исключения при просроченном или ошибочном токене
+            // Handling an exception for an expired or erroneous token
             throw new TokenExpiredException("Token has expired or invalid token");
         }
     }
@@ -88,7 +89,7 @@ public class JWTTokenProvider {
             final Claims claims = extractAllClaims(theToken, theKey);
             return claimsResolver.apply(claims);
         } catch (TokenExpiredException ex) {
-            // Обработка исключения при просроченном или ошибочном токене
+            // Handling an exception for an expired or erroneous token
             throw new TokenExpiredException("Token has expired or invalid token");
         }
     }
@@ -101,7 +102,7 @@ public class JWTTokenProvider {
                     .parseClaimsJws(theToken)
                     .getBody();
         } catch (ExpiredJwtException | MalformedJwtException ex) {
-            // Обработка исключения при просроченном или ошибочном токене
+            // Handling an exception for an expired or erroneous token
             throw new TokenExpiredException("Token has expired or invalid token");
         }
     }

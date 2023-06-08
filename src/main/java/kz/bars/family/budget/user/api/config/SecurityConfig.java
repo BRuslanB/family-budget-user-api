@@ -53,15 +53,14 @@ public class SecurityConfig {
         return http.csrf().disable()
                 .cors().configurationSource(request -> {
                     CorsConfiguration corsConfig = new CorsConfiguration();
-                    corsConfig.addAllowedOrigin("http://localhost:5173"); // Разрешенный источник
-                    corsConfig.addAllowedHeader("*"); // Разрешить все заголовки
-                    corsConfig.addAllowedMethod("*"); // Разрешить все методы
+                    corsConfig.addAllowedOrigin("http://localhost:5173"); // Authorized source
+                    corsConfig.addAllowedHeader("*"); // Allow all headers
+                    corsConfig.addAllowedMethod("*"); // Allow all methods
                     return corsConfig;
                 })
                 .and()
                 .authorizeHttpRequests()
                 .requestMatchers(UN_SECURED_URLs).permitAll()
-//                .anyRequest().authenticated()
                 .requestMatchers(SECURED_URLs).authenticated()
                 .and()
                 .sessionManagement()

@@ -38,7 +38,7 @@ public class UserAccountController {
             PasswordUpdateRequest passwordUpdate = userAccountService.updateUserDtoPassword(passwordUpdateRequest);
 
             if (passwordUpdate != null) {
-                return ResponseEntity.ok(new MessageResponse("User updated the Password successfully!"));
+                return ResponseEntity.ok(new MessageResponse("User Password updated successfully!"));
             }
         } catch (UserNotFoundException | UserPasswordMismatchException e) {
             return new ResponseEntity<>(new MessageResponse(e.getMessage()), HttpStatus.BAD_REQUEST);
@@ -57,7 +57,7 @@ public class UserAccountController {
             ProfileUpdateRequest profileUpdate = userAccountService.updateUserDtoProfile(profileUpdateRequest);
 
             if (profileUpdate != null) {
-                return ResponseEntity.ok(new MessageResponse("User updated the Profile successfully!"));
+                return ResponseEntity.ok(new MessageResponse("User Profile updated successfully!"));
             }
         } catch (UserNotFoundException e) {
             return new ResponseEntity<>(new MessageResponse(e.getMessage()), HttpStatus.BAD_REQUEST);
