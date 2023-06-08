@@ -3,7 +3,6 @@ package kz.bars.family.budget.user.api.api;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import kz.bars.family.budget.user.api.exeption.TokenExpiredException;
 import kz.bars.family.budget.user.api.exeption.UserAlreadyExistsException;
 import kz.bars.family.budget.user.api.exeption.UserNotFoundException;
 import kz.bars.family.budget.user.api.exeption.UserPasswordMismatchException;
@@ -70,7 +69,7 @@ public class UserAuthController {
                     return ResponseEntity.ok(tokenSuccessResponse);
                 }
             }
-        } catch (UserNotFoundException e) { //
+        } catch (UserNotFoundException e) {
             return new ResponseEntity<>(new MessageResponse(e.getMessage()), HttpStatus.BAD_REQUEST);
         }
 

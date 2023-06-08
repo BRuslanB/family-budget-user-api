@@ -64,7 +64,7 @@ public class UserAuthServiceImpl implements UserAuthService {
 
         } catch (UserNotFoundException ex) {
 
-            throw ex; // Пропускаем обработку и выбрасываем исключение дальше
+            throw ex; // Skip processing and throw an exception further
 
         } catch (Exception ex) {
 
@@ -99,7 +99,7 @@ public class UserAuthServiceImpl implements UserAuthService {
 
         } catch (UserNotFoundException ex) {
 
-            throw ex; // Пропускаем обработку и выбрасываем исключение дальше
+            throw ex; // Skip processing and throw an exception further
 
         } catch (Exception ex) {
 
